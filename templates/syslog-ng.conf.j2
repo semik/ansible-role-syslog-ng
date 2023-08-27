@@ -1,0 +1,53 @@
+@version: 3.28
+@include "scl.conf"
+#@include "`scl-root`/system/tty10.conf"
+
+# First, set some global options.
+options { chain_hostnames(off); flush_lines(0); use_dns(no); dns-cache(no); use_fqdn(no);
+          owner("root"); group("adm"); perm(0640); stats_freq(0);
+          bad_hostname("^gconfd$");
+};
+
+########################
+# Sources
+########################
+# This is the default behavior of sysklogd package
+# Logs may come from unix stream, but not from another machine.
+#
+source src {
+{% if syslog_kmsg is defined and syslog_kmsg %}
+       file("/proc/kmsg" program_override("kernel"));
+{% endif %}
+       internal();
+       system();
+};
+
+destination cron { file("/var/log/cron.log" owner("root") group("adm") perm(0640)); };
+destination daemon { file("/var/log/daemon.log" owner("root") group("adm") perm(0640)); };
+destination kern { file("/var/log/kernel.log" owner("root") group("adm") perm(0640)); };
+destination mail { file("/var/log/mail.log" owner("root") group("adm") perm(0640)); };
+destination messages { file("/var/log/messages.log" owner("root") group("adm") perm(0640)); };
+{% if syslog_pq is defined and syslog_pq %}
+destination pq { file("/var/log/pq.log" owner("root") group("adm") perm(0640)); };
+{% endif %}
+
+filter f_cron { facility(cron); };
+filter f_daemon { facility(daemon); };
+filter f_kern { facility(kern); };
+filter f_mail { facility(mail); };
+{% if syslog_pq is defined and syslog_pq %}
+filter f_pq { facility(local0); };
+filter f_messages { not facility(cron, daemon, kern, mail, local0); };
+{% else %}
+filter f_messages { not facility(cron, daemon, kern, mail); };
+{% endif %}
+
+
+log { source(src); filter(f_cron); destination(cron); };
+log { source(src); filter(f_daemon); destination(daemon); };
+log { source(src); filter(f_kern); destination(kern); };
+log { source(src); filter(f_mail); destination(mail); };
+{% if syslog_pq is defined and syslog_pq %}
+log { source(src); filter(f_pq); destination(pq); };
+{% endif %}
+log { source(src); filter(f_messages); destination(messages); };

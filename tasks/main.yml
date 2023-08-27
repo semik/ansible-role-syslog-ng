@@ -1,0 +1,26 @@
+- name: install syslog-ng
+  apt:
+    name:
+      - syslog-ng
+    cache_valid_time: "{{ apt_cache_valid_time }}"
+    update_cache: yes
+    state: present
+
+- name: install new syslog config
+  template:
+    src: syslog-ng.conf.j2
+    dest: /etc/syslog-ng/syslog-ng.conf
+    owner: root
+    group: root
+    mode: 0644
+    backup: yes
+  notify: restart syslog-ng
+
+- name: install new logrotate
+  template:
+    src: logrotate.j2
+    dest: /etc/logrotate.d/syslog-ng
+    owner: root
+    group: root
+    mode: 0644
+    backup: yes

@@ -1,0 +1,23 @@
+/var/log/cron.log
+/var/log/daemon.log
+/var/log/kernel.log
+/var/log/mail.log
+/var/log/pq.log
+/var/log/messages.log {
+        weekly
+        rotate 30
+        dateext
+        dateformat .%Y_%m_%d
+        extension .log
+        compress
+        compresscmd /bin/zstd
+	compressext .zstd
+        delaycompress
+        notifempty
+        missingok
+        postrotate
+
+        postrotate
+                invoke-rc.d syslog-ng reload > /dev/null
+        endscript
+}
